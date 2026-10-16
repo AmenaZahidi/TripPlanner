@@ -1,0 +1,106 @@
+﻿@page "/destinations"
+@using TripPlanner.Models
+@using TripPlanner.Services
+@inject IDestinationService DestinationService
+
+<PageTitle>Find a destination</PageTitle>
+
+<h1 class="mb-3">Find a destination</h1>
+
+@* Search box. oninput means the text updates as I type, so Enter works properly *@
+<div class="input-group mb-4">
+    <input class="form-control"
+           placeholder="Search for a city, e.g. Lisbon"
+           @bind="searchText"
+           @bind:event="oninput"
+           @onkeydown="HandleKeyDown" />
+    <button class="btn btn-primary" @onclick="SearchAsync" disabled="@isLoading">Search</button>
+</div>
+
+@* Only one of these shows at a time: loading, error, no results, or results *@
+@if (isLoading)
+{
+    <div class="d-flex align-items-center gap-2">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span>Searching...</span>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (results is not null && results.Count == 0)
+{
+    <div class="alert alert-info">No places found for "@lastSearch". Try a different spelling.</div>
+}
+else if (results is not null)
+{
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+        @foreach (var place in results)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@place.Name</h5>
+                        <p class="card-text text-muted mb-1">@FormatLocation(place)</p>
+                        @if (place.Population is not null)
+                        {
+                            <small class="text-muted">Population: @place.Population.Value.ToString("N0")</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string searchText = string.Empty;
+    private string lastSearch = string.Empty;
+    private List<Destination>? results;
+    private bool isLoading;
+    private string? errorMessage;
+
+    // Lets the user press Enter instead of clicking the button
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchAsync();
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            errorMessage = "Please type a place to search for.";
+            results = null;
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+        results = null;
+        lastSearch = searchText.Trim();
+
+        try
+        {
+            results = await DestinationService.SearchAsync(lastSearch);
+        }
+        catch (DestinationServiceException ex)
+        {
+            // The message from the service is already user friendly
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // Joins region and country, skipping any that are missing (they can be null)
+    private static string FormatLocation(Destination place) =>
+        string.Join(", ", new[] { place.Region, place.Country }
+            .Where(s => !string.IsNullOrWhiteSpace(s)));
+}

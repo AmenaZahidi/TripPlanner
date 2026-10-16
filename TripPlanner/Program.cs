@@ -1,4 +1,5 @@
 using TripPlanner.Components;
+using TripPlanner.Services;
 
 namespace TripPlanner
 {
@@ -7,6 +8,14 @@ namespace TripPlanner
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+
+            builder.Services.AddHttpClient<IDestinationService, DestinationService>(client =>
+            {
+                client.BaseAddress = new Uri("https://geocoding-api.open-meteo.com/");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
+
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
