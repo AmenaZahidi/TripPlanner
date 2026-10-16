@@ -2,6 +2,7 @@
 @using TripPlanner.Models
 @using TripPlanner.Services
 @inject IDestinationService DestinationService
+@inject IWeatherService WeatherService
 
 <PageTitle>Find a destination</PageTitle>
 
@@ -45,13 +46,57 @@ else if (results is not null)
                         <p class="card-text text-muted mb-1">@FormatLocation(place)</p>
                         @if (place.Population is not null)
                         {
-                            <small class="text-muted">Population: @place.Population.Value.ToString("N0")</small>
+                            <small class="text-muted d-block">Population: @place.Population.Value.ToString("N0")</small>
                         }
+                        <button class="btn btn-outline-primary btn-sm mt-2"
+                                @onclick="() => SelectDestinationAsync(place)">
+                            View forecast
+                        </button>
                     </div>
                 </div>
             </div>
         }
     </div>
+}
+
+@* Forecast section. Only shows after I click "View forecast" on a place *@
+@if (selectedPlace is not null)
+{
+    <hr class="my-4" />
+    <h3 class="mb-3">7 day forecast for @selectedPlace.Name</h3>
+
+    @if (isLoadingForecast)
+    {
+        <div class="d-flex align-items-center gap-2">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Getting the forecast...</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(forecastError))
+    {
+        <div class="alert alert-danger">@forecastError</div>
+    }
+    else if (forecast is not null && forecast.Count == 0)
+    {
+        <div class="alert alert-info">No forecast available for this place.</div>
+    }
+    else if (forecast is not null)
+    {
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var day in forecast)
+            {
+                <div class="card text-center shadow-sm" style="width: 8.5rem;">
+                    <div class="card-body p-2">
+                        <div class="fw-bold">@day.Date.ToString("ddd d MMM")</div>
+                        <div style="font-size: 2rem;">@WeatherCodeHelper.GetIcon(day.WeatherCode)</div>
+                        <div class="small">@WeatherCodeHelper.GetDescription(day.WeatherCode)</div>
+                        <div>@day.MaxTemperature.ToString("0")° / @day.MinTemperature.ToString("0")°</div>
+                        <div class="small text-muted">💧 @day.PrecipitationMm.ToString("0.#") mm</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code {
@@ -60,6 +105,12 @@ else if (results is not null)
     private List<Destination>? results;
     private bool isLoading;
     private string? errorMessage;
+
+    // Forecast for the place I clicked on
+    private Destination? selectedPlace;
+    private List<DayForecast>? forecast;
+    private bool isLoadingForecast;
+    private string? forecastError;
 
     // Lets the user press Enter instead of clicking the button
     private async Task HandleKeyDown(KeyboardEventArgs e)
@@ -84,6 +135,11 @@ else if (results is not null)
         results = null;
         lastSearch = searchText.Trim();
 
+        // New search, so clear the old forecast
+        selectedPlace = null;
+        forecast = null;
+        forecastError = null;
+
         try
         {
             results = await DestinationService.SearchAsync(lastSearch);
@@ -96,6 +152,28 @@ else if (results is not null)
         finally
         {
             isLoading = false;
+        }
+    }
+
+    // Runs when I click "View forecast" on a card
+    private async Task SelectDestinationAsync(Destination place)
+    {
+        selectedPlace = place;
+        forecast = null;
+        forecastError = null;
+        isLoadingForecast = true;
+
+        try
+        {
+            forecast = await WeatherService.GetForecastAsync(place.Latitude, place.Longitude);
+        }
+        catch (WeatherServiceException ex)
+        {
+            forecastError = ex.Message;
+        }
+        finally
+        {
+            isLoadingForecast = false;
         }
     }
 

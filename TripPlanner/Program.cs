@@ -15,7 +15,13 @@ namespace TripPlanner
                 client.BaseAddress = new Uri("https://geocoding-api.open-meteo.com/");
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+            builder.Services.AddMemoryCache();
 
+            builder.Services.AddHttpClient<IWeatherService, WeatherService>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.open-meteo.com/");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
