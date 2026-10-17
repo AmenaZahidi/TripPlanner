@@ -1,0 +1,94 @@
+﻿@using TripPlanner.Models
+@using TripPlanner.Services
+@inject ICurrencyService CurrencyService
+
+@* Shows what my money is worth in the country I'm looking at. My home currency is EUR (Ireland). *@
+<div class="card shadow-sm" style="max-width: 30rem;">
+    <div class="card-body">
+        <h5 class="card-title">💶 Currency</h5>
+
+        @if (isLoading)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span>Getting the exchange rate...</span>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mb-0">@errorMessage</div>
+        }
+        else if (currencyCode is null)
+        {
+            <div class="text-muted">I don't have currency info for this country yet.</div>
+        }
+        else if (rate is null)
+        {
+            <div class="text-muted">No exchange rate available for @currencyCode.</div>
+        }
+        else
+        {
+            @* Changing the amount only does maths, it doesn't call the API again *@
+            <div class="input-group mb-2">
+                <span class="input-group-text">EUR</span>
+                <input type="number" class="form-control" min="0" @bind="amount" @bind:event="oninput" />
+            </div>
+            <p class="fs-4 mb-1">
+                @amount.ToString("N2") EUR = <strong>@((amount * rate.Rate).ToString("N2")) @rate.ToCurrency</strong>
+            </p>
+            <small class="text-muted">1 EUR = @rate.Rate.ToString("0.####") @rate.ToCurrency (rate from @rate.Date)</small>
+        }
+    </div>
+</div>
+
+@code {
+    private const string HomeCurrency = "EUR";
+
+    [Parameter]
+    public Destination? Place { get; set; }
+
+    private decimal amount = 100m;
+    private bool isLoading;
+    private string? errorMessage;
+    private string? currencyCode;
+    private ExchangeRate? rate;
+    private int? loadedPlaceId;
+
+    // Blazor runs this every time the Place changes
+    protected override async Task OnParametersSetAsync()
+    {
+        // Same place as last time, so don't call the API again
+        if (Place is null || Place.Id == loadedPlaceId)
+        {
+            return;
+        }
+
+        loadedPlaceId = Place.Id;
+        isLoading = true;
+        errorMessage = null;
+        rate = null;
+        currencyCode = null;
+
+        // If I don't know the currency for this country, stop here
+        if (!CurrencyLookup.TryGetCurrency(Place.CountryCode, out var code))
+        {
+            isLoading = false;
+            return;
+        }
+
+        currencyCode = code;
+
+        try
+        {
+            rate = await CurrencyService.GetRateAsync(HomeCurrency, code);
+        }
+        catch (CurrencyServiceException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

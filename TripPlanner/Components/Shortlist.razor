@@ -1,0 +1,74 @@
+﻿@page "/shortlist"
+@using TripPlanner.Models
+@using TripPlanner.Services
+@inject ITripShortlistService ShortlistService
+<PageTitle>My shortlist</PageTitle>
+
+<h1 class="mb-3">⭐ My trip shortlist</h1>
+
+@if (items.Count == 0)
+{
+    <div class="alert alert-info">
+        Nothing here yet. Go to <a href="destinations">Destinations</a>, search for a place,
+        view its forecast and click "Add to shortlist".
+    </div>
+}
+else
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <label for="sortBy" class="mb-0">Sort by:</label>
+        <select id="sortBy" class="form-select w-auto" @bind="sortBy" @bind:after="LoadItems">
+            <option value="@ShortlistSort.Name">Name (A to Z)</option>
+            <option value="@ShortlistSort.Warmest">Warmest first</option>
+            <option value="@ShortlistSort.Driest">Driest first</option>
+        </select>
+    </div>
+
+    <table class="table table-hover align-middle shadow-sm">
+        <thead class="table-light">
+            <tr>
+                <th>Place</th>
+                <th>Avg high (7 days)</th>
+                <th>Total rain</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>
+                        <strong>@item.Place.Name</strong><br />
+                        <small class="text-muted">@item.Place.Region @item.Place.Country</small>
+                    </td>
+                    <td>@item.AverageMaxTemperature.ToString("0.#")°C</td>
+                    <td>@item.TotalRainMm.ToString("0.#") mm</td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => Remove(item.Place.Id)">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ShortlistItem> items = new();
+    private ShortlistSort sortBy = ShortlistSort.Name;
+
+    protected override void OnInitialized()
+    {
+        LoadItems();
+    }
+
+    // Gets the list again from the service in the chosen order
+    private void LoadItems()
+    {
+        items = ShortlistService.GetAll(sortBy);
+    }
+
+    private void Remove(int placeId)
+    {
+        ShortlistService.Remove(placeId);
+    }
+}

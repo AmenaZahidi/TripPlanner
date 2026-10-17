@@ -23,6 +23,12 @@ namespace TripPlanner
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
+            builder.Services.AddHttpClient<ICurrencyService, CurrencyService>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.frankfurter.dev/");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
+
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();

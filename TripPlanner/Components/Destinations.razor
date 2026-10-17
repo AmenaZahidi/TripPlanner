@@ -3,22 +3,24 @@
 @using TripPlanner.Services
 @inject IDestinationService DestinationService
 @inject IWeatherService WeatherService
+@inject ITripShortlistService Shortlist
 
 <PageTitle>Find a destination</PageTitle>
 
 <h1 class="mb-3">Find a destination</h1>
 
-@* Search box. oninput means the text updates as I type, so Enter works properly *@
-<div class="input-group mb-4">
-    <input class="form-control"
-           placeholder="Search for a city, e.g. Lisbon"
+@* Search box. Pressing Enter also searches *@
+<div class="input-group mb-4" style="max-width: 36rem;">
+    <input type="text"
+           class="form-control"
+           placeholder="Type a city, e.g. Tokyo"
            @bind="searchText"
            @bind:event="oninput"
            @onkeydown="HandleKeyDown" />
     <button class="btn btn-primary" @onclick="SearchAsync" disabled="@isLoading">Search</button>
 </div>
 
-@* Only one of these shows at a time: loading, error, no results, or results *@
+@* Search results. Only one of these shows at a time *@
 @if (isLoading)
 {
     <div class="d-flex align-items-center gap-2">
@@ -32,23 +34,21 @@ else if (!string.IsNullOrEmpty(errorMessage))
 }
 else if (results is not null && results.Count == 0)
 {
-    <div class="alert alert-info">No places found for "@lastSearch". Try a different spelling.</div>
+    <div class="alert alert-warning">No places found for "@lastSearch". Try another spelling.</div>
 }
 else if (results is not null)
 {
-    <div class="row row-cols-1 row-cols-md-2 g-3">
+    <p class="text-muted">Found @results.Count places for "@lastSearch". Pick the right one:</p>
+
+    <div class="row g-3">
         @foreach (var place in results)
         {
-            <div class="col">
-                <div class="card h-100 shadow-sm">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm h-100">
                     <div class="card-body">
                         <h5 class="card-title">@place.Name</h5>
-                        <p class="card-text text-muted mb-1">@FormatLocation(place)</p>
-                        @if (place.Population is not null)
-                        {
-                            <small class="text-muted d-block">Population: @place.Population.Value.ToString("N0")</small>
-                        }
-                        <button class="btn btn-outline-primary btn-sm mt-2"
+                        <p class="card-text text-muted">@FormatLocation(place)</p>
+                        <button class="btn @(selectedPlace?.Id == place.Id ? "btn-primary" : "btn-outline-primary")"
                                 @onclick="() => SelectDestinationAsync(place)">
                             View forecast
                         </button>
@@ -63,7 +63,23 @@ else if (results is not null)
 @if (selectedPlace is not null)
 {
     <hr class="my-4" />
-    <h3 class="mb-3">7 day forecast for @selectedPlace.Name</h3>
+
+    <h3 class="mb-3">@selectedPlace.Name (@FormatLocation(selectedPlace))</h3>
+
+    @* The currency card gets its own data from the Frankfurter API *@
+    <CurrencyCard Place="selectedPlace" />
+
+    @* The shortlist button only shows once the forecast has loaded *@
+    @if (forecast is { Count: > 0 })
+    {
+        <button class="btn btn-success mt-3" @onclick="AddToShortlist">⭐ Add to shortlist</button>
+        @if (!string.IsNullOrEmpty(shortlistMessage))
+        {
+            <span class="ms-2">@shortlistMessage</span>
+        }
+    }
+
+    <h4 class="mt-4 mb-3">7 day forecast</h4>
 
     @if (isLoadingForecast)
     {
@@ -76,22 +92,24 @@ else if (results is not null)
     {
         <div class="alert alert-danger">@forecastError</div>
     }
-    else if (forecast is not null && forecast.Count == 0)
+    else if (forecast.Count == 0)
     {
-        <div class="alert alert-info">No forecast available for this place.</div>
+        <div class="alert alert-warning">No forecast available for this place.</div>
     }
-    else if (forecast is not null)
+    else
     {
-        <div class="d-flex flex-wrap gap-2">
+        <div class="row g-3">
             @foreach (var day in forecast)
             {
-                <div class="card text-center shadow-sm" style="width: 8.5rem;">
-                    <div class="card-body p-2">
-                        <div class="fw-bold">@day.Date.ToString("ddd d MMM")</div>
-                        <div style="font-size: 2rem;">@WeatherCodeHelper.GetIcon(day.WeatherCode)</div>
-                        <div class="small">@WeatherCodeHelper.GetDescription(day.WeatherCode)</div>
-                        <div>@day.MaxTemperature.ToString("0")° / @day.MinTemperature.ToString("0")°</div>
-                        <div class="small text-muted">💧 @day.PrecipitationMm.ToString("0.#") mm</div>
+                <div class="col-6 col-md-4 col-lg">
+                    <div class="card shadow-sm h-100 text-center">
+                        <div class="card-body">
+                            <h6 class="card-title">@day.Date.ToString("ddd d MMM")</h6>
+                            <div style="font-size: 2.5rem;">@WeatherCodeHelper.GetIcon(day.WeatherCode)</div>
+                            <div>@WeatherCodeHelper.GetDescription(day.WeatherCode)</div>
+                            <div class="fw-bold mt-2">@($"{day.MaxTemperature:0}° / {day.MinTemperature:0}°")</div>
+                            <small class="text-muted">💧 @day.PrecipitationMm.ToString("0.#") mm</small>
+                        </div>
                     </div>
                 </div>
             }
@@ -100,19 +118,25 @@ else if (results is not null)
 }
 
 @code {
+    // What the user typed and what they last searched for
     private string searchText = string.Empty;
     private string lastSearch = string.Empty;
+
+    // Search state. results is null until the first search is done
     private List<Destination>? results;
     private bool isLoading;
     private string? errorMessage;
 
-    // Forecast for the place I clicked on
+    // Forecast state
     private Destination? selectedPlace;
-    private List<DayForecast>? forecast;
+    private List<DayForecast> forecast = new();
     private bool isLoadingForecast;
     private string? forecastError;
 
-    // Lets the user press Enter instead of clicking the button
+    // Message shown after pressing "Add to shortlist"
+    private string? shortlistMessage;
+
+    // Search when the user presses Enter
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -123,22 +147,22 @@ else if (results is not null)
 
     private async Task SearchAsync()
     {
+        // Clear everything from the last search first
+        errorMessage = null;
+        results = null;
+        selectedPlace = null;
+        forecast = new();
+        forecastError = null;
+        shortlistMessage = null;
+
         if (string.IsNullOrWhiteSpace(searchText))
         {
-            errorMessage = "Please type a place to search for.";
-            results = null;
+            errorMessage = "Please type a place name first.";
             return;
         }
 
         isLoading = true;
-        errorMessage = null;
-        results = null;
         lastSearch = searchText.Trim();
-
-        // New search, so clear the old forecast
-        selectedPlace = null;
-        forecast = null;
-        forecastError = null;
 
         try
         {
@@ -146,7 +170,7 @@ else if (results is not null)
         }
         catch (DestinationServiceException ex)
         {
-            // The message from the service is already user friendly
+            // The service gives a friendly message, so I can show it straight away
             errorMessage = ex.Message;
         }
         finally
@@ -155,11 +179,11 @@ else if (results is not null)
         }
     }
 
-    // Runs when I click "View forecast" on a card
     private async Task SelectDestinationAsync(Destination place)
     {
+        shortlistMessage = null;
         selectedPlace = place;
-        forecast = null;
+        forecast = new();
         forecastError = null;
         isLoadingForecast = true;
 
@@ -177,8 +201,39 @@ else if (results is not null)
         }
     }
 
-    // Joins region and country, skipping any that are missing (they can be null)
-    private static string FormatLocation(Destination place) =>
-        string.Join(", ", new[] { place.Region, place.Country }
-            .Where(s => !string.IsNullOrWhiteSpace(s)));
+    // Saves the selected place and a summary of its forecast to the shortlist
+    private void AddToShortlist()
+    {
+        if (selectedPlace is null || forecast is null || forecast.Count == 0)
+        {
+            return;
+        }
+
+        var item = new ShortlistItem
+        {
+            Place = selectedPlace,
+            AverageMaxTemperature = forecast.Average(d => d.MaxTemperature),
+            TotalRainMm = forecast.Sum(d => d.PrecipitationMm)
+        };
+
+        shortlistMessage = Shortlist.Add(item) ? "Added to your shortlist!" : "Already on your shortlist.";
+    }
+
+    // Joins the region and country, and skips any that are empty
+    private static string FormatLocation(Destination place)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(place.Region))
+        {
+            parts.Add(place.Region);
+        }
+
+        if (!string.IsNullOrWhiteSpace(place.Country))
+        {
+            parts.Add(place.Country);
+        }
+
+        return string.Join(", ", parts);
+    }
 }
