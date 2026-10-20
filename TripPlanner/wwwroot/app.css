@@ -58,3 +58,501 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+
+
+
+:root {
+    --tp-navy: #0d2a5c;
+    --tp-blue: #1a5fd0;
+    --tp-amber: #ffb703;
+    --tp-text: #1f2a3c;
+    --tp-muted: #6b778c;
+}
+
+body {
+    background: #f4f7fb;
+    color: var(--tp-text);
+}
+
+.tp-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Top bar */
+.tp-header {
+    background: var(--tp-navy);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+
+.tp-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.tp-logo {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.35rem;
+    text-decoration: none;
+}
+
+    .tp-logo:hover {
+        color: #fff;
+    }
+
+.tp-nav {
+    display: flex;
+    gap: .25rem;
+}
+
+    .tp-nav a {
+        color: #dbe6ff;
+        text-decoration: none;
+        padding: .5rem 1rem;
+        border-radius: 999px;
+        font-weight: 500;
+    }
+
+        .tp-nav a:hover {
+            background: rgba(255,255,255,.12);
+            color: #fff;
+        }
+
+        .tp-nav a.active {
+            background: #fff;
+            color: var(--tp-navy);
+        }
+
+.tp-main {
+    padding: 1.5rem 0 3rem;
+    min-height: calc(100vh - 140px);
+}
+
+.tp-footer {
+    background: #fff;
+    border-top: 1px solid #e3e9f2;
+    padding: 1.25rem 0;
+    color: var(--tp-muted);
+    font-size: .875rem;
+    text-align: center;
+}
+
+/* Hero banner and the search bar that sits on its bottom edge */
+.tp-hero {
+    background: linear-gradient(135deg, #0d2a5c 0%, #1a5fd0 60%, #3b8bff 100%);
+    color: #fff;
+    border-radius: 1.25rem;
+    padding: 3rem 2rem 4.5rem;
+}
+
+    .tp-hero h1 {
+        font-weight: 800;
+        font-size: clamp(1.9rem, 4vw, 2.75rem);
+    }
+
+    .tp-hero p {
+        color: #d7e5ff;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+.tp-searchbar {
+    background: #fff;
+    border: 4px solid var(--tp-amber);
+    border-radius: .9rem;
+    display: flex;
+    gap: .5rem;
+    padding: .4rem;
+    max-width: 760px;
+    margin: -2.25rem auto 0;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(13,42,92,.25);
+}
+
+    .tp-searchbar input {
+        flex: 1;
+        border: 0;
+        outline: 0;
+        padding: .75rem 1rem;
+        font-size: 1.05rem;
+        background: transparent;
+        color: var(--tp-text);
+        min-width: 0;
+    }
+
+    .tp-searchbar button {
+        background: var(--tp-blue);
+        color: #fff;
+        border: 0;
+        border-radius: .55rem;
+        padding: .75rem 1.6rem;
+        font-weight: 600;
+    }
+
+        .tp-searchbar button:hover {
+            background: #154fb0;
+        }
+
+.tp-section-title {
+    font-weight: 700;
+    margin: 2.5rem 0 1rem;
+}
+
+/* Popular destination tiles */
+.tp-tile {
+    border: 0;
+    border-radius: 1rem;
+    padding: 1rem;
+    min-height: 130px;
+    width: 100%;
+    color: #fff;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+    cursor: pointer;
+}
+
+    .tp-tile:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 22px rgba(0,0,0,.18);
+    }
+
+    .tp-tile .emoji {
+        position: absolute;
+        top: .6rem;
+        right: .9rem;
+        font-size: 2.6rem;
+    }
+
+    .tp-tile .name {
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .tp-tile .sub {
+        font-size: .85rem;
+        opacity: .85;
+    }
+
+/* Make the Bootstrap cards and buttons softer everywhere */
+.card {
+    border: 1px solid #e3e9f2;
+    border-radius: 1rem;
+}
+
+.btn {
+    border-radius: .6rem;
+}
+
+.btn-primary {
+    background-color: var(--tp-blue);
+    border-color: var(--tp-blue);
+}
+
+    .btn-primary:hover {
+        background-color: #154fb0;
+        border-color: #154fb0;
+    }
+/* ===== Destinations page ===== */
+.tp-searchbar.tp-searchbar-inline {
+    margin: 0 0 1.5rem 0;
+    max-width: 760px;
+}
+
+.tp-result {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #fff;
+    border: 1px solid #e3e9f2;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    transition: box-shadow .15s, border-color .15s;
+}
+
+    .tp-result:hover {
+        box-shadow: 0 6px 18px rgba(13,42,92,.12);
+        border-color: #c9d8f2;
+    }
+
+    .tp-result.selected {
+        border-color: var(--tp-blue);
+        box-shadow: 0 0 0 2px rgba(26,95,208,.25);
+    }
+
+    .tp-result .grow {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tp-result h5 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .tp-result .meta {
+        color: var(--tp-muted);
+        font-size: .9rem;
+    }
+
+.tp-flag {
+    width: 48px;
+    height: 34px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e3e9f2;
+    flex-shrink: 0;
+}
+
+.tp-flag-empty {
+    width: 48px;
+    height: 34px;
+    border-radius: 6px;
+    background: #e8f1ff;
+    flex-shrink: 0;
+}
+
+.tp-detail-head {
+    background: linear-gradient(135deg, #0d2a5c, #1a5fd0);
+    color: #fff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+    .tp-detail-head h2 {
+        margin: 0;
+        font-weight: 800;
+    }
+
+    .tp-detail-head .sub {
+        color: #d7e5ff;
+    }
+
+.tp-stat {
+    background: #fff;
+    border: 1px solid #e3e9f2;
+    border-radius: 1rem;
+    padding: 1rem;
+    text-align: center;
+    height: 100%;
+}
+
+    .tp-stat .value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--tp-navy);
+    }
+
+    .tp-stat .label {
+        color: var(--tp-muted);
+        font-size: .85rem;
+    }
+
+
+/* ===== Animations ===== */
+@keyframes tp-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes tp-gradient {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* The banner fades in and its colours slowly move */
+.tp-hero {
+    background-size: 200% 200%;
+    animation: tp-fade-up .6s ease both, tp-gradient 14s ease infinite;
+}
+
+.tp-searchbar {
+    animation: tp-fade-up .6s .15s ease both;
+}
+
+/* Cards, tiles, results and stat boxes fade up when they appear */
+.tp-tile, .tp-result, .tp-stat, .tp-detail-head, .row > div > .card {
+    animation: tp-fade-up .5s ease both;
+}
+
+/* Each one starts a little later than the one before, so they appear in a wave */
+.row > :nth-child(2) > * {
+    animation-delay: .06s;
+}
+
+.row > :nth-child(3) > * {
+    animation-delay: .12s;
+}
+
+.row > :nth-child(4) > * {
+    animation-delay: .18s;
+}
+
+.row > :nth-child(5) > * {
+    animation-delay: .24s;
+}
+
+.row > :nth-child(6) > * {
+    animation-delay: .30s;
+}
+
+.row > :nth-child(7) > * {
+    animation-delay: .36s;
+}
+
+.d-grid > .tp-result:nth-child(2) {
+    animation-delay: .05s;
+}
+
+.d-grid > .tp-result:nth-child(3) {
+    animation-delay: .10s;
+}
+
+.d-grid > .tp-result:nth-child(4) {
+    animation-delay: .15s;
+}
+
+.d-grid > .tp-result:nth-child(5) {
+    animation-delay: .20s;
+}
+
+.d-grid > .tp-result:nth-child(6) {
+    animation-delay: .25s;
+}
+
+/* Hover and click feel */
+.row > div > .card {
+    transition: transform .15s, box-shadow .15s;
+}
+
+    .row > div > .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 22px rgba(13,42,92,.14) !important;
+    }
+
+.tp-result:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active, .tp-searchbar button:active {
+    transform: scale(.97);
+}
+
+/* Respect people who turn animations off in their system settings */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+/* Photo and description card */
+.tp-about-img {
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    object-fit: cover;
+}
+
+.tp-about p {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* ===== Two column Destinations layout ===== */
+button.tp-result {
+    text-align: left;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    padding: .75rem 1rem;
+}
+
+.tp-result .chevron {
+    color: var(--tp-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.tp-result.selected .chevron {
+    color: var(--tp-blue);
+}
+
+@media (min-width: 992px) {
+    .tp-list {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        position: sticky;
+        top: 80px;
+        padding: 4px;
+    }
+}
+
+.tp-placeholder {
+    border: 2px dashed #c9d8f2;
+    border-radius: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--tp-muted);
+    background: #fff;
+}
+
+.tp-head-stats {
+    display: flex;
+    gap: 1.25rem;
+}
+
+    .tp-head-stats div {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    .tp-head-stats strong {
+        font-size: 1.25rem;
+    }
+
+    .tp-head-stats span {
+        font-size: .75rem;
+        color: #d7e5ff;
+    }
+
+.tp-day-name {
+    width: 6.5rem;
+}
+
+.tp-rain {
+    width: 4.5rem;
+    text-align: right;
+}

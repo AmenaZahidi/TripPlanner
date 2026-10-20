@@ -7,20 +7,18 @@
 
 <PageTitle>Find a destination</PageTitle>
 
-<h1 class="mb-3">Find a destination</h1>
+<h1 class="h2 fw-bold mb-3">Find a destination</h1>
 
-@* Search box. Pressing Enter also searches *@
-<div class="input-group mb-4" style="max-width: 36rem;">
+@* Search bar. Pressing Enter also searches *@
+<div class="tp-searchbar tp-searchbar-inline">
     <input type="text"
-           class="form-control"
            placeholder="Type a city, e.g. Tokyo"
            @bind="searchText"
            @bind:event="oninput"
            @onkeydown="HandleKeyDown" />
-    <button class="btn btn-primary" @onclick="SearchAsync" disabled="@isLoading">Search</button>
+    <button @onclick="SearchAsync" disabled="@isLoading">Search</button>
 </div>
 
-@* Search results. Only one of these shows at a time *@
 @if (isLoading)
 {
     <div class="d-flex align-items-center gap-2">
@@ -32,89 +30,179 @@ else if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
-else if (results is not null && results.Count == 0)
+else if (results is null)
 {
-    <div class="alert alert-warning">No places found for "@lastSearch". Try another spelling.</div>
-}
-else if (results is not null)
-{
-    <p class="text-muted">Found @results.Count places for "@lastSearch". Pick the right one:</p>
-
+    @* Nothing searched yet, so show some ideas instead of an empty page *@
+    <h2 class="tp-section-title">Popular destinations</h2>
     <div class="row g-3">
-        @foreach (var place in results)
+        @foreach (var popular in PopularPlaces.All)
         {
-            <div class="col-md-6 col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">@place.Name</h5>
-                        <p class="card-text text-muted">@FormatLocation(place)</p>
-                        <button class="btn @(selectedPlace?.Id == place.Id ? "btn-primary" : "btn-outline-primary")"
-                                @onclick="() => SelectDestinationAsync(place)">
-                            View forecast
-                        </button>
-                    </div>
-                </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <button class="tp-tile" style="background: @popular.Gradient" @onclick="() => SearchForAsync(popular.City)">
+                    <span class="emoji">@popular.Emoji</span>
+                    <span class="name">@popular.City</span>
+                    <span class="sub">@popular.Country</span>
+                </button>
             </div>
         }
     </div>
-}
 
-@* Forecast section. Only shows after I click "View forecast" on a place *@
-@if (selectedPlace is not null)
-{
-    <hr class="my-4" />
-
-    <h3 class="mb-3">@selectedPlace.Name (@FormatLocation(selectedPlace))</h3>
-
-    @* The currency card gets its own data from the Frankfurter API *@
-    <CurrencyCard Place="selectedPlace" />
-
-    @* The shortlist button only shows once the forecast has loaded *@
-    @if (forecast is { Count: > 0 })
-    {
-        <button class="btn btn-success mt-3" @onclick="AddToShortlist">⭐ Add to shortlist</button>
-        @if (!string.IsNullOrEmpty(shortlistMessage))
-        {
-            <span class="ms-2">@shortlistMessage</span>
-        }
-    }
-
-    <h4 class="mt-4 mb-3">7 day forecast</h4>
-
-    @if (isLoadingForecast)
-    {
-        <div class="d-flex align-items-center gap-2">
-            <div class="spinner-border text-primary" role="status"></div>
-            <span>Getting the forecast...</span>
+    <h2 class="tp-section-title">How it works</h2>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1">🔎</div>
+                    <h5 class="mt-2">1. Search</h5>
+                    <p class="text-muted mb-0">Type any city or town, or click one of the popular places.</p>
+                </div>
+            </div>
         </div>
-    }
-    else if (!string.IsNullOrEmpty(forecastError))
-    {
-        <div class="alert alert-danger">@forecastError</div>
-    }
-    else if (forecast.Count == 0)
-    {
-        <div class="alert alert-warning">No forecast available for this place.</div>
-    }
-    else
-    {
-        <div class="row g-3">
-            @foreach (var day in forecast)
-            {
-                <div class="col-6 col-md-4 col-lg">
-                    <div class="card shadow-sm h-100 text-center">
-                        <div class="card-body">
-                            <h6 class="card-title">@day.Date.ToString("ddd d MMM")</h6>
-                            <div style="font-size: 2.5rem;">@WeatherCodeHelper.GetIcon(day.WeatherCode)</div>
-                            <div>@WeatherCodeHelper.GetDescription(day.WeatherCode)</div>
-                            <div class="fw-bold mt-2">@($"{day.MaxTemperature:0}° / {day.MinTemperature:0}°")</div>
-                            <small class="text-muted">💧 @day.PrecipitationMm.ToString("0.#") mm</small>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1">📍</div>
+                    <h5 class="mt-2">2. Pick the right place</h5>
+                    <p class="text-muted mb-0">Lots of places share a name, so choose the right one from the list.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1">⭐</div>
+                    <h5 class="mt-2">3. Compare</h5>
+                    <p class="text-muted mb-0">See the weather, the currency and some info, then save it to your shortlist.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (results.Count == 0)
+{
+    <div class="alert alert-warning">No places found for "@lastSearch". Try another spelling.</div>
+}
+else
+{
+    @* Two columns: the results on the left and the details on the right *@
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <p class="text-muted small mb-2">@results.Count places found for "@lastSearch", biggest first</p>
+
+            <div class="tp-list d-grid gap-2">
+                @foreach (var place in results)
+                {
+                    <button type="button"
+                            class="tp-result @(selectedPlace?.Id == place.Id ? "selected" : "")"
+                            @onclick="() => SelectDestinationAsync(place)">
+                        @if (FlagUrl(place) is string flag)
+                        {
+                            <img class="tp-flag" src="@flag" alt="Flag of @place.Country" />
+                        }
+                        else
+                        {
+                            <div class="tp-flag-empty"></div>
+                        }
+
+                        <div class="grow">
+                            <h5>@place.Name</h5>
+                            <div class="meta">@FormatLocation(place)</div>
+                            @if (place.Population is > 0)
+                            {
+                                <div class="meta">👥 @place.Population.Value.ToString("N0") people</div>
+                            }
                         </div>
-                    </div>
+
+                        <span class="chevron">›</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            @if (selectedPlace is null)
+            {
+                <div class="tp-placeholder">
+                    <div class="fs-1">🧭</div>
+                    <p class="mb-0">Pick a place to see its weather, currency and info.</p>
                 </div>
             }
+            else
+            {
+                <div class="tp-detail-head" id="place-details">
+                    @if (FlagUrl(selectedPlace) is string headFlag)
+                    {
+                        <img class="tp-flag" src="@headFlag" alt="Flag of @selectedPlace.Country" />
+                    }
+                    <div class="flex-grow-1">
+                        <h2>@selectedPlace.Name</h2>
+                        <div class="sub">@FormatLocation(selectedPlace)</div>
+                    </div>
+
+                    @* The summary and the shortlist button only show once the forecast has loaded *@
+                    @if (forecast.Count > 0 && WarmestDay is not null)
+                    {
+                        <div class="tp-head-stats">
+                            <div><strong>@AverageHigh.ToString("0")°</strong><span>avg high</span></div>
+                            <div><strong>@TotalRain.ToString("0.#") mm</strong><span>rain</span></div>
+                            <div><strong>@WarmestDay.Date.ToString("ddd")</strong><span>warmest day</span></div>
+                        </div>
+                        <button class="btn btn-warning fw-semibold" @onclick="AddToShortlist">⭐ Add to shortlist</button>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(shortlistMessage))
+                {
+                    <div class="text-success fw-semibold mt-2">@shortlistMessage</div>
+                }
+
+                @* Photo and description (Wikipedia) next to the currency card (Frankfurter) *@
+                <div class="row g-3 mt-1">
+                    <div class="col-md-7">
+                        <PlaceAbout Place="selectedPlace" />
+                    </div>
+                    <div class="col-md-5">
+                        <CurrencyCard Place="selectedPlace" />
+                    </div>
+                </div>
+
+                <h4 class="mt-4 mb-3">7 day forecast</h4>
+
+                @if (isLoadingForecast)
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <span>Getting the forecast...</span>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(forecastError))
+                {
+                    <div class="alert alert-danger">@forecastError</div>
+                }
+                else if (forecast.Count == 0)
+                {
+                    <div class="alert alert-warning">No forecast available for this place.</div>
+                }
+                else
+                {
+                    <div class="card shadow-sm">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var day in forecast)
+                            {
+                                <li class="list-group-item d-flex align-items-center gap-3">
+                                    <span class="fw-semibold tp-day-name">@day.Date.ToString("ddd d MMM")</span>
+                                    <span class="fs-3">@WeatherCodeHelper.GetIcon(day.WeatherCode)</span>
+                                    <span class="flex-grow-1">@WeatherCodeHelper.GetDescription(day.WeatherCode)</span>
+                                    <span class="fw-bold">@($"{day.MaxTemperature:0}° / {day.MinTemperature:0}°")</span>
+                                    <small class="text-muted tp-rain">💧 @day.PrecipitationMm.ToString("0.#") mm</small>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
         </div>
-    }
+    </div>
 }
 
 @code {
@@ -136,6 +224,25 @@ else if (results is not null)
     // Message shown after pressing "Add to shortlist"
     private string? shortlistMessage;
 
+    // Gets the ?q=... part of the URL when I arrive from the Home page
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? Query { get; set; }
+
+    // Numbers worked out from the forecast (used for the summary and the shortlist)
+    private double AverageHigh => forecast.Count == 0 ? 0 : forecast.Average(d => d.MaxTemperature);
+    private double TotalRain => forecast.Sum(d => d.PrecipitationMm);
+    private DayForecast? WarmestDay => forecast.MaxBy(d => d.MaxTemperature);
+
+    // If I arrived with a search, run it straight away
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            searchText = Query;
+            await SearchAsync();
+        }
+    }
+
     // Search when the user presses Enter
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
@@ -143,6 +250,13 @@ else if (results is not null)
         {
             await SearchAsync();
         }
+    }
+
+    // Used by the popular place tiles
+    private async Task SearchForAsync(string city)
+    {
+        searchText = city;
+        await SearchAsync();
     }
 
     private async Task SearchAsync()
@@ -166,7 +280,10 @@ else if (results is not null)
 
         try
         {
-            results = await DestinationService.SearchAsync(lastSearch);
+            var found = await DestinationService.SearchAsync(lastSearch);
+
+            // Biggest places first, so the well known one is at the top (e.g. Dublin in Ireland)
+            results = found.OrderByDescending(p => p.Population ?? 0).ToList();
         }
         catch (DestinationServiceException ex)
         {
@@ -204,7 +321,7 @@ else if (results is not null)
     // Saves the selected place and a summary of its forecast to the shortlist
     private void AddToShortlist()
     {
-        if (selectedPlace is null || forecast is null || forecast.Count == 0)
+        if (selectedPlace is null || forecast.Count == 0)
         {
             return;
         }
@@ -212,8 +329,8 @@ else if (results is not null)
         var item = new ShortlistItem
         {
             Place = selectedPlace,
-            AverageMaxTemperature = forecast.Average(d => d.MaxTemperature),
-            TotalRainMm = forecast.Sum(d => d.PrecipitationMm)
+            AverageMaxTemperature = AverageHigh,
+            TotalRainMm = TotalRain
         };
 
         shortlistMessage = Shortlist.Add(item) ? "Added to your shortlist!" : "Already on your shortlist.";
@@ -235,5 +352,16 @@ else if (results is not null)
         }
 
         return string.Join(", ", parts);
+    }
+
+    // Flag picture for the country (images from flagcdn.com). Returns null if there is no country code
+    private static string? FlagUrl(Destination place)
+    {
+        if (string.IsNullOrWhiteSpace(place.CountryCode))
+        {
+            return null;
+        }
+
+        return $"https://flagcdn.com/w80/{place.CountryCode.ToLowerInvariant()}.png";
     }
 }

@@ -39,7 +39,7 @@ else
                 <tr>
                     <td>
                         <strong>@item.Place.Name</strong><br />
-                        <small class="text-muted">@item.Place.Region @item.Place.Country</small>
+                        <small class="text-muted">@string.Join(", ", new[] { item.Place.Region, item.Place.Country }.Where(s => !string.IsNullOrWhiteSpace(s)))</small>
                     </td>
                     <td>@item.AverageMaxTemperature.ToString("0.#")°C</td>
                     <td>@item.TotalRainMm.ToString("0.#") mm</td>

@@ -1,7 +1,101 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>TripPlanner</PageTitle>
 
-<h1>Hello, world!</h1>
+@* Big banner, with the search bar sitting on its bottom edge *@
+<section class="tp-hero text-center">
+    <h1>Find your next trip ✈️</h1>
+    <p>Check the weather, see what your money is worth and save the places you love.</p>
+</section>
 
-Welcome to your new app.
+<div class="tp-searchbar">
+    <input type="text"
+           placeholder="Where do you want to go? e.g. Lisbon"
+           @bind="search"
+           @bind:event="oninput"
+           @onkeydown="HandleKeyDown" />
+    <button @onclick="() => GoSearch(search)">Search</button>
+</div>
+
+<h2 class="tp-section-title">Popular destinations</h2>
+<div class="row g-3">
+    @foreach (var place in popular)
+    {
+        <div class="col-6 col-md-4 col-lg-2">
+            <button class="tp-tile" style="background: @place.Gradient" @onclick="() => GoSearch(place.City)">
+                <span class="emoji">@place.Emoji</span>
+                <span class="name">@place.City</span>
+                <span class="sub">@place.Country</span>
+            </button>
+        </div>
+    }
+</div>
+
+<h2 class="tp-section-title">Everything you need to decide</h2>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1">🌦️</div>
+                <h5 class="mt-2">7 day forecast</h5>
+                <p class="text-muted mb-0">Highs, lows and rainfall for the week ahead, so you know what to pack.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1">💶</div>
+                <h5 class="mt-2">Live exchange rates</h5>
+                <p class="text-muted mb-0">See what your euros are worth in the local currency before you go.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1">⭐</div>
+                <h5 class="mt-2">Your shortlist</h5>
+                <p class="text-muted mb-0">Save places and sort them by name, warmest or driest.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string search = string.Empty;
+
+    // A small record to hold the info for each tile
+    private record PopularPlace(string City, string Country, string Emoji, string Gradient);
+
+    private readonly List<PopularPlace> popular = new()
+    {
+        new("Paris", "France", "🗼", "linear-gradient(135deg, #ff7e5f, #d6336c)"),
+        new("Rome", "Italy", "🏛️", "linear-gradient(135deg, #f7971e, #e8590c)"),
+        new("Tokyo", "Japan", "🗾", "linear-gradient(135deg, #7f5af0, #3b3b98)"),
+        new("New York", "United States", "🗽", "linear-gradient(135deg, #1a5fd0, #0d2a5c)"),
+        new("Barcelona", "Spain", "⛪", "linear-gradient(135deg, #e63946, #9d0208)"),
+        new("Lisbon", "Portugal", "🚋", "linear-gradient(135deg, #00b4a6, #00798c)")
+    };
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            GoSearch(search);
+        }
+    }
+
+    // Goes to the Destinations page and passes the search in the URL (?q=...)
+    private void GoSearch(string place)
+    {
+        if (string.IsNullOrWhiteSpace(place))
+        {
+            Navigation.NavigateTo("destinations");
+            return;
+        }
+
+        Navigation.NavigateTo($"destinations?q={Uri.EscapeDataString(place.Trim())}");
+    }
+}

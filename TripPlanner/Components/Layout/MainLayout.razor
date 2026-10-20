@@ -1,20 +1,28 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+<header class="tp-header">
+    <div class="tp-container tp-header-inner">
+        <a class="tp-logo" href="">✈️ TripPlanner</a>
+        <nav class="tp-nav">
+            <NavLink href="" Match="NavLinkMatch.All">Home</NavLink>
+            <NavLink href="destinations">Destinations</NavLink>
+            <NavLink href="shortlist">⭐ Shortlist</NavLink>
+        </nav>
     </div>
+</header>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<main class="tp-main">
+    <div class="tp-container">
+        @Body
+    </div>
+</main>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+<footer class="tp-footer">
+    <div class="tp-container">
+        Weather and places by Open-Meteo · Exchange rates by Frankfurter ·
+        Place photos and info from Wikipedia · Student project
+    </div>
+</footer>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="TripPlanner.Tests/TripPlanner.Tests.csproj" Id="c78bd05f-6b76-4d8f-9cc0-94ba77379033" />
   <Project Path="TripPlanner/TripPlanner.csproj" />
 </Solution>
